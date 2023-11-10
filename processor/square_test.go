@@ -5,6 +5,7 @@ import (
 	"testing"
 )
 
+// Unittest for testing average color func.
 func TestCalcAverageColor(t *testing.T) {
 	var colors = [][]color.Color{
 		{color.RGBA{172, 10, 127, 255}, color.RGBA{140, 47, 170, 255}, color.RGBA{196, 151, 117, 255}, color.RGBA{166, 22, 183, 255}, color.RGBA{192, 204, 33, 255}, color.RGBA{216, 67, 179, 255}, color.RGBA{78, 154, 251, 255}, color.RGBA{82, 162, 219, 255}, color.RGBA{195, 118, 125, 255}, color.RGBA{139, 103, 125, 255}},

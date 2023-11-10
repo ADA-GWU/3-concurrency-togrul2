@@ -3,28 +3,21 @@ package pixel
 import (
 	"image"
 	"image/color"
-	_ "image/jpeg" // For processing jpeg format.
-	"io"
 )
 
 // Get matrix of pixels of image.
-func GetImagePixels(imageFile io.Reader) ([][]color.Color, error) {
-	img, _, err := image.Decode(imageFile)
-	if err != nil {
-		return nil, err
-	}
-
+func GetImagePixels(img image.Image) [][]color.Color {
 	bounds := img.Bounds()
 	height := bounds.Max.Y
 	width := bounds.Max.X
-	// Create slice of pixels
+
+	// Create matrix of pixels and fill its cells with colors from correspoding coordinates.
 	pixels := make([][]color.Color, height)
 	for i := 0; i < height; i++ {
-		// Create row of pixel matrix
-		pixels[i] = make([]color.Color, width)
+		pixels[i] = make([]color.Color, width) // Create a row.
 		for j := 0; j < width; j++ {
 			pixels[i][j] = img.At(j, i)
 		}
 	}
-	return pixels, nil
+	return pixels
 }

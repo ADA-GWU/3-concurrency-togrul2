@@ -2,65 +2,76 @@
 package processor
 
 import (
+	"assignment3/arg"
 	"assignment3/pixel"
 	"fmt"
 	"image"
 	"image/png"
-	"io"
 	"os"
-	"strings"
+	"time"
 )
 
 // Finds the average color of each square of image with given
 // size and draws new image with the calculated squares.
-func ProcessImage(file io.Reader, size int, mode string) error {
-	if strings.ToLower(mode) == "s" {
-		if err := processImageWithSingleThread(file, size); err != nil {
-			return err
-		}
-	} else if strings.ToLower(mode) == "m" {
-		if err := processImageWithMultithreads(file, size); err != nil {
-			return err
-		}
-	} else {
-		return fmt.Errorf("invalid value for mode parameter")
+func ProcessImage(
+	img image.Image,
+	size int,
+	mode arg.RunMode,
+	messageChannel chan<- image.Image,
+	errorsChannel chan<- error,
+) {
+	switch mode {
+	case arg.SingleThreaded:
+		processImageWithSingleThread(img, size, messageChannel, errorsChannel)
+	case arg.MultiThreaded:
+		// processImageWithMultithreads(img, size, messageChannel, errorsChannel)
+	default:
+		errorsChannel <- fmt.Errorf("invalid value for mode parameter")
 	}
-	return nil
 }
 
-func processImageWithSingleThread(file io.Reader, size int) error {
-	pixels, err := pixel.GetImagePixels(file)
-	if err != nil {
-		return err
-	}
+// Creates rgba image from matrix of colors.
+
+func processImageWithSingleThread(
+	img image.Image,
+	size int,
+	updateChannel chan<- image.Image,
+	errorsChannel chan<- error,
+) {
+	pixels := pixel.GetImagePixels(img)
+
+	var resultImg *image.RGBA
+	// Iteratively process image squares.
 	for i := 0; i < len(pixels); i += size {
 		for j := 0; j < len(pixels[0]); j += size {
 			processSquare(pixels, i, j, i+size, j+size)
+			// Send new image to img update channel to update it in gui.
+			resultImg = createRGBAImage(pixels)
+			time.Sleep(time.Second / 5)
+			updateChannel <- resultImg
+
 		}
 	}
 
-	img := image.NewRGBA(
-		image.Rectangle{
-			image.Point{0, 0},
-			image.Point{len(pixels[0]), len(pixels)},
-		},
-	)
-	for i := 0; i < len(pixels); i++ {
-		for j := 0; j < len(pixels[0]); j++ {
-			img.Set(j, i, pixels[i][j])
-		}
-	}
-	f, fileErr := os.Create("result.jpg")
+	// Save the results to the file.
+	resultFile, fileErr := os.Create("result.jpg")
 	if fileErr != nil {
-		return fileErr
+		errorsChannel <- fileErr
 	}
-	if encodeErr := png.Encode(f, img); encodeErr != nil {
-		return encodeErr
+
+	if encodeErr := png.Encode(resultFile, resultImg); encodeErr != nil {
+		errorsChannel <- encodeErr
 	}
-	return nil
+	close(updateChannel)
+	close(errorsChannel)
+	fmt.Println("Saved result in result.jpg file")
 }
 
-func processImageWithMultithreads(file io.Reader, size int) error {
-	// pixels, err := pixel.GetImagePixels(file)
-	return nil
+func processImageWithMultithreads(
+	img image.Image,
+	size int,
+	imageChannel chan<- image.Image,
+	errorsChannel chan<- error,
+) {
+	//TODO: Implement
 }
