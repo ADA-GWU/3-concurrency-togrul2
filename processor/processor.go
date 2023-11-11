@@ -17,25 +17,21 @@ func ProcessImage(
 	img image.Image,
 	size int,
 	mode arg.RunMode,
-	messageChannel chan<- image.Image,
+	imagesChannel chan<- image.Image,
 	errorsChannel chan<- error,
 ) {
-	switch mode {
-	case arg.SingleThreaded:
-		processImageWithSingleThread(img, size, messageChannel, errorsChannel)
-	case arg.MultiThreaded:
-		// processImageWithMultithreads(img, size, messageChannel, errorsChannel)
-	default:
-		errorsChannel <- fmt.Errorf("invalid value for mode parameter")
+	if mode == arg.SingleThreaded {
+		processImageWithSingleThread(img, size, imagesChannel, errorsChannel)
+	} else {
+		processImageWithMultithreads(img, size, imagesChannel, errorsChannel)
 	}
 }
 
 // Creates rgba image from matrix of colors.
-
 func processImageWithSingleThread(
 	img image.Image,
 	size int,
-	updateChannel chan<- image.Image,
+	imagesChannel chan<- image.Image,
 	errorsChannel chan<- error,
 ) {
 	pixels := pixel.GetImagePixels(img)
@@ -47,9 +43,8 @@ func processImageWithSingleThread(
 			processSquare(pixels, i, j, i+size, j+size)
 			// Send new image to img update channel to update it in gui.
 			resultImg = createRGBAImage(pixels)
-			time.Sleep(time.Second / 5)
-			updateChannel <- resultImg
-
+			imagesChannel <- resultImg
+			time.Sleep(time.Second / 25)
 		}
 	}
 
@@ -62,9 +57,10 @@ func processImageWithSingleThread(
 	if encodeErr := png.Encode(resultFile, resultImg); encodeErr != nil {
 		errorsChannel <- encodeErr
 	}
-	close(updateChannel)
+	fmt.Println("Saved result to result.jpg file.")
+	// Close channels to indicate end of work.
+	close(imagesChannel)
 	close(errorsChannel)
-	fmt.Println("Saved result in result.jpg file")
 }
 
 func processImageWithMultithreads(
