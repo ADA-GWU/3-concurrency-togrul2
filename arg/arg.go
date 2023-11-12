@@ -15,9 +15,9 @@ const (
 )
 
 func stringToRunMode(value string) (RunMode, error) {
-	switch value {
+	switch value = strings.ToUpper(value); value {
 	case "S", "M":
-		return RunMode(strings.ToUpper(value)), nil
+		return RunMode(value), nil
 	default:
 		return "", fmt.Errorf("invalid option for mode argument")
 	}

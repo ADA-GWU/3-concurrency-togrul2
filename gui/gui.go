@@ -8,6 +8,7 @@ import (
 	"gioui.org/layout"
 	"gioui.org/op"
 	"gioui.org/op/paint"
+	"gioui.org/widget"
 )
 
 func RunGUIEventLoop(w *app.Window, img *image.Image, job func(chan<- image.Image, chan<- error)) error {
@@ -25,8 +26,7 @@ func RunGUIEventLoop(w *app.Window, img *image.Image, job func(chan<- image.Imag
 			case system.FrameEvent:
 				gtx := layout.NewContext(&ops, e)
 				imgOp := paint.NewImageOp(*img)
-				imgOp.Add(&ops)
-				paint.PaintOp{}.Add(gtx.Ops)
+				widget.Image{Src: imgOp}.Layout(gtx)
 				e.Frame(gtx.Ops)
 			}
 		case newImg := <-imageChannel:

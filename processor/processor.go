@@ -87,9 +87,9 @@ func processImageWithMultithreads(
 	var matrixLock sync.Mutex
 
 	maxGorutines := runtime.NumCPU()
+	// This channel helps us to limit number of running goroutines to number of available threads in machine.
 	gorutineGuard := make(chan struct{}, maxGorutines)
 
-	// Go uses all CPU threads by default when gorutines are used.
 	for i := 0; i < len(pixels); i += size {
 		wg.Add(1)
 		gorutineGuard <- struct{}{}
