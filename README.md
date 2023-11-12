@@ -29,8 +29,9 @@ It will create a build file in project's foder. For windows it's going to be mai
 
 ## Usage
 
-Running: main.exe filename square_size, mode
+CLI command: appname filename square_size, mode
 
+- `appname`: executable built by Go compiler
 - `filename`: name of the image file to be processed.
 - `square_size`: Must be an integer.
 - `mode`: S | M (Here s stands for singlethreaded and M for multithreaded.)
