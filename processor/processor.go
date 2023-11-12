@@ -6,8 +6,11 @@ import (
 	"assignment3/pixel"
 	"fmt"
 	"image"
+	"image/color"
 	"image/png"
 	"os"
+	"runtime"
+	"sync"
 	"time"
 )
 
@@ -20,22 +23,36 @@ func ProcessImage(
 	imagesChannel chan<- image.Image,
 	errorsChannel chan<- error,
 ) {
+	pixels := pixel.GetImagePixels(img)
 	if mode == arg.SingleThreaded {
-		processImageWithSingleThread(img, size, imagesChannel, errorsChannel)
+		processImageWithSingleThread(pixels, size, imagesChannel, errorsChannel)
 	} else {
-		processImageWithMultithreads(img, size, imagesChannel, errorsChannel)
+		processImageWithMultithreads(pixels, size, imagesChannel, errorsChannel)
 	}
 }
 
-// Creates rgba image from matrix of colors.
+// Saves the image to the file, returns error if any.
+func saveToFile(img image.Image) error {
+	resultFile, fileErr := os.Create("result.jpg")
+	if fileErr != nil {
+		return fileErr
+	}
+
+	if encodeErr := png.Encode(resultFile, img); encodeErr != nil {
+		return encodeErr
+	}
+
+	fmt.Println("Saved result to result.jpg file.")
+	return nil
+}
+
+// Creates rgba image from matrix of colors in singlethread way.
 func processImageWithSingleThread(
-	img image.Image,
+	pixels [][]color.Color,
 	size int,
 	imagesChannel chan<- image.Image,
 	errorsChannel chan<- error,
 ) {
-	pixels := pixel.GetImagePixels(img)
-
 	var resultImg *image.RGBA
 	// Iteratively process image squares.
 	for i := 0; i < len(pixels); i += size {
@@ -49,25 +66,59 @@ func processImageWithSingleThread(
 	}
 
 	// Save the results to the file.
-	resultFile, fileErr := os.Create("result.jpg")
-	if fileErr != nil {
-		errorsChannel <- fileErr
+	if saveErr := saveToFile(resultImg); saveErr != nil {
+		errorsChannel <- saveErr
 	}
 
-	if encodeErr := png.Encode(resultFile, resultImg); encodeErr != nil {
-		errorsChannel <- encodeErr
-	}
-	fmt.Println("Saved result to result.jpg file.")
 	// Close channels to indicate end of work.
 	close(imagesChannel)
 	close(errorsChannel)
 }
 
+// Creates rgba image from matrix of colors in multithreaded way.
 func processImageWithMultithreads(
-	img image.Image,
+	pixels [][]color.Color,
 	size int,
-	imageChannel chan<- image.Image,
+	imagesChannel chan<- image.Image,
 	errorsChannel chan<- error,
 ) {
-	//TODO: Implement
+	var resultImg *image.RGBA
+	var wg sync.WaitGroup
+	var matrixLock sync.Mutex
+
+	maxGorutines := runtime.NumCPU()
+	gorutineGuard := make(chan struct{}, maxGorutines)
+
+	// Go uses all CPU threads by default when gorutines are used.
+	for i := 0; i < len(pixels); i += size {
+		wg.Add(1)
+		gorutineGuard <- struct{}{}
+		go func(row int) {
+			defer wg.Done()
+			for j := 0; j < len(pixels[0]); j += size {
+				processSquare(pixels, row, j, row+size, j+size)
+				// Acquire lock for pixels var.
+				matrixLock.Lock()
+				resultImg = createRGBAImage(pixels)
+				// After the job is done, release the lock.
+				matrixLock.Unlock()
+
+				// Send new image to img update channel to update it in gui.
+				imagesChannel <- resultImg
+				time.Sleep(time.Second / 25)
+			}
+			<-gorutineGuard
+		}(i)
+	}
+
+	// Wait until all fragments are loaded asyncronously
+	wg.Wait()
+
+	// Save the results to the file.
+	if saveErr := saveToFile(resultImg); saveErr != nil {
+		errorsChannel <- saveErr
+	}
+
+	close(imagesChannel)
+	close(errorsChannel)
 }

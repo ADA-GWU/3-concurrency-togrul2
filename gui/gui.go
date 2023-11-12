@@ -1,7 +1,6 @@
 package gui
 
 import (
-	"fmt"
 	"image"
 
 	"gioui.org/app"
@@ -31,9 +30,9 @@ func RunGUIEventLoop(w *app.Window, img *image.Image, job func(chan<- image.Imag
 				e.Frame(gtx.Ops)
 			}
 		case newImg := <-imageChannel:
+			// Refresh image when new one is added.
 			*img = newImg
 			w.Invalidate()
-			fmt.Println("Update received")
 		case err := <-errorsChannel:
 			return err
 		}
