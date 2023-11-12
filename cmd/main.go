@@ -9,6 +9,7 @@ import (
 	"os"
 
 	"gioui.org/app"
+	"gioui.org/unit"
 )
 
 func main() {
@@ -30,11 +31,16 @@ func main() {
 	if imageDecodeErr != nil {
 		log.Fatal(imageDecodeErr)
 	}
+	// Size of window, this way we preserve the original image ratio.
+	bounds := img.Bounds()
+	aspectRatio := float32(bounds.Max.X) / float32(bounds.Max.Y)
+	height := 600
+	weight := int(float32(height) * aspectRatio)
 
 	// Entrypoint for our app where GUI and image processing work together with the help of channels.
 	// Usage of channels is required for updating processed image in GUI in a real time.
 	go func() {
-		w := app.NewWindow()
+		w := app.NewWindow(app.Size(unit.Dp(weight), unit.Dp(height)))
 
 		// Image processing job.
 		job := func(imgChannel chan<- image.Image, errorsChannel chan<- error) {

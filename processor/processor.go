@@ -96,9 +96,9 @@ func processImageWithMultithreads(
 		go func(row int) {
 			defer wg.Done()
 			for j := 0; j < len(pixels[0]); j += size {
-				processSquare(pixels, row, j, row+size, j+size)
 				// Acquire lock for pixels var.
 				matrixLock.Lock()
+				processSquare(pixels, row, j, row+size, j+size)
 				resultImg = createRGBAImage(pixels)
 				// After the job is done, release the lock.
 				matrixLock.Unlock()

@@ -26,7 +26,7 @@ func RunGUIEventLoop(w *app.Window, img *image.Image, job func(chan<- image.Imag
 			case system.FrameEvent:
 				gtx := layout.NewContext(&ops, e)
 				imgOp := paint.NewImageOp(*img)
-				widget.Image{Src: imgOp}.Layout(gtx)
+				widget.Image{Src: imgOp, Fit: widget.Contain}.Layout(gtx)
 				e.Frame(gtx.Ops)
 			}
 		case newImg := <-imageChannel:
