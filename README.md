@@ -33,5 +33,5 @@ CLI command: appname filename square_size, mode
 
 - `appname`: executable built by Go compiler
 - `filename`: name of the image file to be processed.
-- `square_size`: Must be an integer.
-- `mode`: S | M (Here s stands for singlethreaded and M for multithreaded.)
+- `square_size`: Must be a positive integer.
+- `mode`: S | M (Here S stands for singlethreaded and M for multithreaded.)

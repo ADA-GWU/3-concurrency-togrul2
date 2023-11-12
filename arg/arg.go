@@ -33,8 +33,8 @@ func ParseArguments() (string, int, RunMode, error) {
 	fileName := os.Args[1]
 	// Parse square size argument.
 	squareSize, sizeParseErr := strconv.Atoi(os.Args[2])
-	if sizeParseErr != nil {
-		return "", 0, "", fmt.Errorf("provide a valid integer for square size parameter")
+	if sizeParseErr != nil || squareSize < 1 {
+		return "", 0, "", fmt.Errorf("provide a valid positive integer for square size parameter")
 	}
 
 	// Parse mode argument.
